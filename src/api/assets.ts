@@ -7,3 +7,7 @@ export function ensureAssetsDir(cfg: ApiConfig) {
     mkdirSync(cfg.assetsRoot, { recursive: true });
   }
 }
+
+export function getInMemoryURL(cfg: ApiConfig, videoId: string): string {
+  return `http://localhost:${cfg.port}/api/thumbnails/${videoId}`;
+}
