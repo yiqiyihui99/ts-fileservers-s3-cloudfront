@@ -7,10 +7,6 @@ import { BadRequestError, NotFoundError, UserForbiddenError } from "./errors";
 import { getInMemoryURL } from "./assets";
 import path from "path";
 
-type Thumbnail = {
-  data: ArrayBuffer;
-  mediaType: string;
-};
 
 export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
   const { videoId } = req.params as { videoId?: string };
