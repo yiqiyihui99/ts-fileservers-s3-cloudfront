@@ -5,6 +5,7 @@ import type { ApiConfig } from "../config";
 import type { BunRequest } from "bun";
 import { BadRequestError, NotFoundError, UserForbiddenError } from "./errors";
 import { getInMemoryURL } from "./assets";
+import path from "path";
 
 type Thumbnail = {
   data: ArrayBuffer;
@@ -33,11 +34,11 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
     throw new BadRequestError("Thumbnail file is too large");
   }
 
-  const mediaType = imageData.type;
+  const mediaType = imageData.type.split("/")[1];
   const data = await imageData.arrayBuffer();
-  const encodedData = Buffer.from(data).toString("base64");
-  const dataURL = `data:${mediaType};base64,${encodedData}`;
+  const fileName = `${videoId}.${mediaType}`;
   const video = getVideo(cfg.db, videoId);
+
   if (!video) {
     throw new NotFoundError("Video not found");
   }
@@ -45,8 +46,19 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
     throw new UserForbiddenError("Forbidden Thumbnail Upload");
   }
 
-  video.thumbnailURL = dataURL;
+  const assetDiskPath = (cfg: ApiConfig, assetPath: string) => {
+    return path.join(cfg.assetsRoot, assetPath);
+  }
 
-  updateVideo(cfg.db, video);
+  const assetURL = (cfg: ApiConfig, assetPath: string) => {
+    return `http://localhost:${cfg.port}/assets/${assetPath}`;
+  }
+
+  const fileDiskPath = assetDiskPath(cfg, fileName);
+  const fileURL = assetURL(cfg, fileName);
+
+  await Bun.write(fileDiskPath, data);
+
+  updateVideo(cfg.db, { ...video, thumbnailURL: fileURL });
   return respondWithJSON(200, video);
 }
