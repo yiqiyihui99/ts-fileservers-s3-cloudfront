@@ -5,6 +5,7 @@ import type { ApiConfig } from "../config";
 import type { BunRequest } from "bun";
 import { BadRequestError, NotFoundError, UserForbiddenError } from "./errors";
 import { getInMemoryURL } from "./assets";
+import crypto from "crypto";
 import path from "path";
 
 
@@ -35,7 +36,11 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
     throw new BadRequestError("Invalid thumbnail file type");
   }
   const data = await imageData.arrayBuffer();
-  const fileName = `${videoId}.${mimeType.split("/")[1]}`;
+
+  // random bytes makes it not cache stale assets in the browser
+  // makes client-side rendering consistent
+  const randomBytes = crypto.randomBytes(32).toString("base64url");
+  const fileName = `${randomBytes}.${mimeType.split("/")[1]}`;
   const video = getVideo(cfg.db, videoId);
 
   if (!video) {
